@@ -1,44 +1,63 @@
-import Database as db
+
+import java.sql.SQLException
 
 fun main(args: Array<String>) {
 
-    val participaciones = listOf(Ctf(1, 1, 3), Ctf(1, 2, 101)
-        , Ctf(2, 2, 3), Ctf(2, 1, 50), Ctf(2, 3, 1)
-        , Ctf(3, 1, 50), Ctf(3, 3, 5))
-    val mejoresCtfByGroupId = mejoresResultados(participaciones)
-    println(mejoresCtfByGroupId)
+    val conex = Database()
 
-    db.loadTable()
-}
+    //val participaciones = CTFs(conex).selectAll()
+    //val mejoresCtfByGroupId = mejoresResultados(participaciones)
+    //println(mejoresCtfByGroupId)
 
-/**
- * TODO
- *
- * @param participaciones
- * @return devuelve un mutableMapOf<Int, Pair<Int, Ctf>> donde
- *      Key: el grupoId del grupo
- *      Pair:
- *          first: Mejor posición
- *          second: Objeto CTF el que mejor ha quedado
- */
-private fun mejoresResultados(participaciones: List<Ctf>): MutableMap<Int, Pair<Int, Ctf>> {
-    val participacionesByCTFId = participaciones.groupBy { it.id }
-    val participacionesByGrupoId = participaciones.groupBy { it.grupoId }
-    val mejoresCtfByGroupId = mutableMapOf<Int, Pair<Int, Ctf>>()
-    participacionesByCTFId.values.forEach { ctfs ->
-        val ctfsOrderByPuntuacion = ctfs.sortedBy { it.puntuacion }.reversed()
-        participacionesByGrupoId.keys.forEach { grupoId ->
-            val posicionNueva = ctfsOrderByPuntuacion.indexOfFirst { it.grupoId == grupoId }
-            if (posicionNueva >= 0) {
-                val posicionMejor = mejoresCtfByGroupId.getOrDefault(grupoId, null)
-                if (posicionMejor != null) {
-                    if (posicionNueva < posicionMejor.first)
-                        mejoresCtfByGroupId[grupoId] = Pair(posicionNueva, ctfsOrderByPuntuacion[posicionNueva])
-                } else
-                    mejoresCtfByGroupId[grupoId] = Pair(posicionNueva, ctfsOrderByPuntuacion[posicionNueva])
+    //val args = mutableListOf("-l")
 
+    if (args.isEmpty()) {
+        println("Debe proporcionar al menos un argumento.")
+        return
+    }
+
+    when (args[0]) {
+        "-a" -> {
+            if (args.size != 4) {
+                println("El número de argumentos es incorrecto.")
+                return
             }
+            val ctfid = args[1].toInt()
+            val grupoId = args[2].toInt()
+            val puntuacion = args[3].toInt()
+            // Añadir una participación
+            CTFs(conex).insert(Ctf(ctfid,grupoId,puntuacion))
+            Grupos(conex).updatePuntos()
+        }
+        "-d" -> {
+            if (args.size != 3) {
+                println("El número de argumentos es incorrecto.")
+                return
+            }
+            val ctfid = args[1].toInt()
+            val grupoId = args[2].toInt()
+            // Eliminar una participación
+            CTFs(conex).delete(ctfid)
+            Grupos(conex).updatePuntos()
+        }
+        "-l" -> {
+            if (args.size > 2) {
+                println("El número de argumentos es incorrecto.")
+                return
+            }
+            if (args.size == 2) {
+                println(Grupos(conex).getElement(args[1].toInt()))
+            } else {
+                for (grps in Grupos(conex).selectAll()) {
+                    println(grps)
+                }
+            }
+
+        }
+        else -> {
+            println("La opción proporcionada no es válida.")
+            return
         }
     }
-    return mejoresCtfByGroupId
 }
+

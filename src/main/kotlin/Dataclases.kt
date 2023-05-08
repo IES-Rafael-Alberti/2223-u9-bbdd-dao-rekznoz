@@ -3,7 +3,8 @@ data class Ctf(
     val grupoId: Int,
     val puntuacion: Int
 )
+
 data class Grupo(
     val grupoid: Int,
-    val mejorCtfId: Int = 0
+    var mejorCtfId: Int = 0
 )
